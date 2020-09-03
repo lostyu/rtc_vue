@@ -1,0 +1,346 @@
+.ui-root {
+	position: relative;
+	height: 100%;
+	margin: 0 auto;
+	display:-webkit-box;
+	display:-ms-flexbox;
+	display:flex;
+	-webkit-box-orient: vertical;
+	-webkit-box-direction: normal;
+	    -ms-flex-direction: column;
+	        flex-direction: column;
+}
+
+.ui-page {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	display:-webkit-box;
+	display:-ms-flexbox;
+	display:flex;
+	-webkit-box-orient: vertical;
+	-webkit-box-direction: normal;
+	    -ms-flex-direction: column;
+	        flex-direction: column;
+	-webkit-box-flex:1;
+	    -ms-flex:1;
+	        flex:1;
+}
+
+.ui-content {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	-webkit-box-flex: 1;
+	    -ms-flex: 1;
+			flex: 1;
+	overflow-y:auto;
+	overflow-x:hidden;
+	-webkit-overflow-scrolling: touch;
+	will-change: scroll-position;
+}
+
+.ui-scrollContent {
+	overflow: hidden;
+	position: absolute;
+	min-height: 100%;
+	top: 0;
+	left: 0;
+	width: 100%;
+}
+
+/*ui-row*/
+.ui-row {
+	display: block;
+	overflow: hidden;
+}
+
+.ui-row::before,
+.ui-row::after,
+.ui-clearfix::before,
+.ui-clearfix::after {
+	display: table;
+	content: '';
+	clear: both;
+}
+
+.ui-col-10 {
+	float: left;
+	width: 10%;
+}
+
+.ui-col-20 {
+	float: left;
+	width: 20%;
+}
+
+.ui-col-25 {
+	float: left;
+	width: 25%;
+}
+
+.ui-col-30 {
+	float: left;
+	width: 30%;
+}
+
+.ui-col-33 {
+	float: left;
+	width: 33.3333%;
+}
+
+.ui-col-40 {
+	float: left;
+	width: 40%;
+}
+
+.ui-col-50 {
+	float: left;
+	width: 50%;
+}
+
+.ui-col-60 {
+	float: left;
+	width: 60%;
+}
+
+.ui-col-67 {
+	float: left;
+	width: 66.6666%;
+}
+
+.ui-col-70 {
+	float: left;
+	width: 70%;
+}
+
+.ui-col-75 {
+	float: left;
+	width: 75%;
+}
+
+.ui-col-80 {
+	float: left;
+	width: 80%;
+}
+
+.ui-col-90 {
+	float: left;
+	width: 90%;
+}
+
+.ui-col-100 {
+	float: left;
+	width: 100%;
+}
+
+
+
+
+/*float*/
+.ui-pull-left {
+	float: left;
+}
+
+.ui-pull-right {
+	float: right;
+}
+
+/*text-align*/
+.ui-text-left {
+	text-align: left;
+}
+
+.ui-text-center {
+	text-align: center;
+}
+
+.ui-text-right {
+	text-align: right;
+}
+
+
+/*ui-box*/
+.ui-box {
+	display:-webkit-box;
+}
+
+.ui-box-ver {
+	-webkit-box-orient: vertical;
+	-webkit-box-direction: normal;
+}
+
+.ui-col {
+	-webkit-box-flex:1;
+    -ms-flex:1;
+        flex:1;
+	width:0;
+}
+
+.ui-col-2 {
+	-webkit-box-flex:2;
+    -ms-flex:2;
+        flex:2;
+	width:0;
+}
+
+.ui-col-3 {
+	-webkit-box-flex:3;
+    -ms-flex:3;
+        flex:3;
+	width:0;
+}
+
+.ui-col-4 {
+	-webkit-box-flex:4;
+    -ms-flex:4;
+        flex:4;
+	width:0;
+}
+.ui-box-ver>.ui-col,
+.ui-box-ver>.ui-col-2,
+.ui-box-ver>.ui-col-3,
+.ui-box-ver>.ui-col-4{
+	width:auto;
+	height:0;
+}
+.ui-box-pack-start {
+	-webkit-box-pack: start;
+}
+
+.ui-box-pack-end {
+	-webkit-box-pack: end;
+}
+
+.ui-box-pack-center {
+	-webkit-box-pack: center;
+}
+
+.ui-box-align-start {
+	-webkit-box-align: start;
+}
+
+.ui-box-align-end {
+	-webkit-box-align: end;
+}
+
+.ui-box-align-center {
+	-webkit-box-align: center;
+}
+
+/*ui-flex*/
+.ui-flex {
+	display:-webkit-box;
+	display:-ms-flexbox;
+	display:flex;
+}
+/*flex-direction*/
+
+.ui-flex-row {
+	-webkit-box-orient: horizontal;
+	-webkit-box-direction: normal;
+		-ms-flex-direction: row;
+			flex-direction: row;
+}
+
+.ui-flex-row-reverse {
+	-webkit-box-orient: horizontal;
+	-webkit-box-direction: reverse;
+		-ms-flex-direction: row-reverse;
+			flex-direction: row-reverse;
+}
+
+.ui-flex-column {
+	-webkit-box-orient: vertical;
+-webkit-box-direction: normal;
+    -ms-flex-direction: column;
+        flex-direction: column;
+}
+
+.ui-flex-column-reverse {
+	-webkit-box-orient: vertical;
+-webkit-box-direction: reverse;
+    -ms-flex-direction: column-reverse;
+        flex-direction: column-reverse;
+}
+/*flex-wrap*/
+
+.ui-flex-nowrap {
+	-ms-flex-wrap: nowrap;
+    flex-wrap: nowrap;
+}
+
+.ui-flex-wrap {
+	-ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+}
+
+.ui-flex-wrap-reverse {
+	-ms-flex-wrap: wrap-reverse;
+    flex-wrap: wrap-reverse;
+}
+/*flex-justify*/
+
+.ui-flex-justify-start {
+	-webkit-box-pack: start;
+    -ms-flex-pack: start;
+        justify-content: flex-start;
+}
+
+.ui-flex-justify-end {
+	-webkit-box-pack: end;
+    -ms-flex-pack: end;
+        justify-content: flex-end;
+}
+
+.ui-flex-justify-center {
+	-webkit-box-pack: center;
+    -ms-flex-pack: center;
+        justify-content: center;
+}
+
+.ui-flex-justify-space-between {
+	-webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+        justify-content: space-between;
+}
+
+.ui-flex-justify-space-around {
+	-ms-flex-pack: distribute;
+    justify-content: space-around;
+}
+/*flex-align*/
+
+.ui-flex-align-stretch {
+	-webkit-box-align: stretch;
+    -ms-flex-align: stretch;
+        align-items: stretch;
+}
+
+.ui-flex-align-start {
+	-webkit-box-align: start;
+    -ms-flex-align: start;
+        align-items: flex-start;
+}
+
+.ui-flex-align-end {
+	-webkit-box-align: end;
+    -ms-flex-align: end;
+        align-items: flex-end;
+}
+
+.ui-flex-align-center {
+	-webkit-box-align: center;
+	    -ms-flex-align: center;
+	        align-items: center;
+}
+
+.ui-flex-align-baseline {
+	-webkit-box-align: baseline;
+	    -ms-flex-align: baseline;
+	        align-items: baseline;
+}
+
+
+
+

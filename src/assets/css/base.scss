@@ -1,0 +1,139 @@
+*,*:before,*:after {
+	-webkit-box-sizing: border-box;
+	box-sizing: border-box;
+	-webkit-tap-highlight-color: transparent;
+	-webkit-touch-callout: none;
+}
+
+html,body{
+	height: 100%;
+}
+body{
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+	-ms-content-zooming: none;
+	touch-action: manipulation;
+	word-wrap: break-word;
+	-webkit-user-drag: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	background: #f4f4f4;
+}
+@media only screen and (width: 375px) and (min-height: 690px) {
+    body {
+        height: 100vh;
+    }
+}
+// @media (-webkit-device-pixel-ratio: 1) {
+	// 这里保证在pc 端显示正常；
+	.ui-root{
+		max-width: 750px;
+		min-width: 320px;
+	}
+// }
+%ui-line{
+	text-overflow: ellipsis;
+	-webkit-box-orient: vertical;
+	display: -webkit-box;
+	overflow: hidden;
+	// line-height 必须>=normal;
+}
+
+.ui-line-1{
+	-webkit-line-clamp: 1;
+	@extend %ui-line;
+}
+.ui-line-2{
+	-webkit-line-clamp: 2;
+	@extend %ui-line;
+}
+.scroll-container{
+	/* 接管scroll */
+	overflow:auto;
+	-webkit-overflow-scrolling: touch;   
+}
+.list-ul{
+	margin:0;
+	padding:0;
+	list-style: none;
+}
+
+
+.autoAffix{
+    min-height: 100vh;
+    display:table;
+    width:100%;
+    .autoAffix-main{
+      //100px 高的底部屏幕bottom
+      display:table-row;
+      overflow:hidden;
+      &+.autoAffix-bottom{
+        display:table-row;
+      }
+    }
+}
+
+.autoAffix-bottom{
+
+    height:0px;
+}
+
+.lt12-container{
+	// 处理android <12px 文字  垂直居中的问题，注意只能处理定高定宽的。
+	width:100%;
+	height:100%;
+	position:relative;
+	overflow:hidden;
+	.lt12-2x{
+	  //2x 内部所有的东西都是按2倍大小写的
+	  position:absolute;
+	  width:200%;
+	  height:200%;
+	  transform:scale(0.5) translate3d(-50%,-50%,0);
+	}
+}
+
+
+
+
+
+
+.van-picker{
+	&.van-datetime-picker{
+		.van-picker__cancel{
+			color:#999;
+		}
+		.van-picker__title{
+			color:#333;
+		}
+		.van-picker__confirm{
+			color:#333;
+		}
+		.van-picker-column__item{
+			font-size:14px;
+			color:#ccc;
+		}
+		.van-picker-column__item--selected{
+			font-weight: bold;
+			font-size:16px;
+			color:#333;
+		}
+	}
+}
+
+
+
+
+
+.__preload__{
+    &:after{
+        content: "";
+        display: block;
+        position: absolute;
+        // background: url('preload.png') no-repeat -10000px -1000px;
+        width: 0;
+        height: 0
+    }
+}

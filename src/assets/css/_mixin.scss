@@ -1,0 +1,97 @@
+@mixin retina($path, $size: auto auto, $extras: null) {
+  $cap: 3;
+  /*
+     * Set a counter and get the length of the image path.
+     */
+  $position: -1;
+  $strpath: "#{$path}";
+  $length: str-length($strpath);
+
+  /*
+     * Loop ver the image path and figure out the
+     * position of the dot where the extension begins.
+     */
+  @for $i from $length through $length - 10 {
+    @if $position == -1 {
+      $char: str-slice($strpath, $i, $i);
+      @if str-index($char, ".") == 1 {
+        $position: $i;
+      }
+    }
+  }
+
+  /*
+     * If we were able to figure out where the extension is,
+     * slice the path into a base and an extension. Use that to
+     * calculate urls for different density environments. Set
+     * values for different environments.
+     */
+  @if $position != -1 {
+    $ext: str-slice($strpath, $position + 1, $length);
+    $base: str-slice($strpath, 1, $position - 1);
+    $at1x_path: "#{$base}.#{$ext}";
+    $at2x_path: "#{$base}@2x.#{$ext}";
+
+    /*
+       * Set a base background for 1x environments.
+       */
+    background: url("#{$at1x_path}") $extras;
+    background-size: $size;
+
+    /*
+       * Create an @2x-ish media query.
+       */
+    @media all and (-webkit-min-device-pixel-ratio: 1.5),
+      all and (-o-min-device-pixel-ratio: 3/2),
+      all and (min--moz-device-pixel-ratio: 1.5),
+      all and (min-device-pixel-ratio: 1.5) {
+      background: url("#{$at2x_path}") $extras;
+      background-size: $size;
+    }
+
+    /*
+       * Create media queries for all environments that the user has
+       * provided images for.
+       */
+    @if $cap >= 2 {
+      @for $env from 2 through $cap {
+        $suffix: "@#{$env}x";
+        @media (-webkit-min-device-pixel-ratio: $env), (min-resolution: $env * 96dpi) {
+          background: url("#{$base}#{$suffix}.#{$ext}") $extras;
+          background-size: $size;
+        }
+      }
+    }
+
+    /*
+     * If anything went wrong trying to separate the file from its
+     * extension, set a background value without doing anything to it.
+     */
+  } @else {
+    background: url("#{$path}") $extras;
+    background-size: $size;
+  }
+}
+//实现设计稿上的 1px border   => 720 
+@mixin border1px($color,$direction : null) {
+
+  border:0.01rem solid $color;
+  
+  // 只要小于device-width<设计稿的一半，那么计算出来的bordre最终会小于0.5px 在某些机型上会出现兼容问题，此时将其修正到0.5px；
+  // 和border-radius 一起使用，会导致无法显示；   ----注意：只有这种情况（确切的说是1px边框的圆角）才需要使用该方法，其他情况 border 0.01rem 就搞定了 ，很关键！！！！！！
+  @media screen and (max-device-width:360px)
+  and (-webkit-min-device-pixel-ratio: 1.5)
+  {
+    border:0.5px solid $color;
+  }
+  // @if($direction){
+  //   $directions : 'left','top','right','bottom';
+  //   @for $i from 1 through length($directions) {
+  //     $item: nth($directions, $i);
+  //     @if($item != $direction){
+  //       border-#{$item}:0;
+  //     }
+  //   }
+  // }
+
+}
