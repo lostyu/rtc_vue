@@ -88,43 +88,43 @@ export default {
   },
 
   async created() {
-    // const res = await this.$axios.get(`${config.erpUrl}/user/getAdminLoginInfo`, {
-    //   params: {
-    //     sid: this.sid,
-    //   },
-    //   interceptors: {
-    //     // 为false 时，不再经过某个interceptor
-    //     request: false,
-    //     response: false,
-    //     error: false,
-    //   },
-    // })
-    // const data = res.data
-    // // token授权
-    // if (data.status === 0) {
-    //   const { accessToken, refreshToken } = data.data
-    //   this.$store.commit('REFRESH_USER', { accessToken, refreshToken })
-    //   this.userInfo = data.data
-    //   this.userId = data.data.departmentName
-    //   this.deptId = data.data.deptId
-    //   this.deptName = data.data.departmentName
-    //   this.randomRoomId()
-    //   devices()
-    //   this.app = new Client(this.userId, this.roomId)
-    //   console.log(this.app)
-    // }
+    const res = await this.$axios.get(`/user/getAdminLoginInfo`, {
+      params: {
+        sid: this.sid,
+      },
+      interceptors: {
+        // 为false 时，不再经过某个interceptor
+        request: false,
+        response: false,
+        error: false,
+      },
+    })
+    const data = res.data
+    // token授权
+    if (data.status === 0) {
+      const { accessToken, refreshToken } = data.data
+      this.$store.commit('REFRESH_USER', { accessToken, refreshToken })
+      this.userInfo = data.data
+      this.userId = data.data.departmentName
+      this.deptId = data.data.deptId
+      this.deptName = data.data.departmentName
+      this.randomRoomId()
+      devices()
+      this.app = new Client(this.userId, this.roomId)
+      console.log(this.app)
+    }
 
     // test
-    const { accessToken, refreshToken } = userData
-    this.$store.commit('REFRESH_USER', { accessToken, refreshToken })
-    this.userInfo = userData
-    this.userId = userData.departmentName
-    this.deptId = userData.deptId
-    this.deptName = userData.departmentName
-    this.randomRoomId()
-    devices()
-    this.app = new Client(this.userId, this.roomId)
-    console.log(this.app)
+    // const { accessToken, refreshToken } = userData
+    // this.$store.commit('REFRESH_USER', { accessToken, refreshToken })
+    // this.userInfo = userData
+    // this.userId = userData.departmentName
+    // this.deptId = userData.deptId
+    // this.deptName = userData.departmentName
+    // this.randomRoomId()
+    // devices()
+    // this.app = new Client(this.userId, this.roomId)
+    // console.log(this.app)
   },
   methods: {
     // 1加入房间

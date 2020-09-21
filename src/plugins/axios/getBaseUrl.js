@@ -15,7 +15,7 @@ function getBaseUrl(url) {
       }
     }
   }
-  return weChatBaseURL
+  return '/'
 }
 // 调用多个服务的时候 baseURL，有些需要baseURL 作转发。比如调用本机上的api 服务，baseURL 肯定不再沿用之前默认的baseURL，并且需要以 /api/node 路径作为转发。
 export default getBaseUrl

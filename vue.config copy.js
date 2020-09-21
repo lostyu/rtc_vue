@@ -1,13 +1,6 @@
 const autoprefixer = require('autoprefixer')
 const config = require('./src/config/index')
 
-process.on('uncaughtException', function(err) {
-  //打印出错误
-  console.log(err)
-  //打印出错误的调用栈方便调试
-  console.log(err.stack)
-})
-
 module.exports = {
   runtimeCompiler: true,
   css: {
@@ -31,31 +24,26 @@ module.exports = {
       '/baseApi': {
         target: config.baseUrl,
         changeOrigin: true,
-        pathRewrite: function(path) {
-          const result = path.replace('/baseApi', '')
-          console.log(result)
-          return result
+        pathRewrite: {
+          '^/baseApi/': '/'
         }
       },
       '/erpApi': {
         target: config.erpUrl,
         changeOrigin: true,
-        pathRewrite: function(path) {
-          const result = path.replace('/erpApi', '')
-          console.log(result)
-          return result
+        pathRewrite: {
+          '^/erpApi/': '/'
         }
+        // pathRewrite: function(path) {
+        //   console.log(path)
+        //   return path.replace('/erpApi', '')
+        // }
       },
       '/socket': {
         target: config.socketUrl,
         ws: true,
-        // pathRewrite: {
-        //   '^/socket/': '/'
-        // }
-        pathRewrite: function(path) {
-          const result = path.replace('/socket', '')
-          console.log(result)
-          return result
+        pathRewrite: {
+          '^/socket/': '/'
         }
       }
     }
