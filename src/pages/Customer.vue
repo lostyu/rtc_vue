@@ -324,7 +324,7 @@ export default {
     async handleBtnOff() {
       await this.leave()
       this.settingOffCall()
-      this.closeVideoRoom()
+      await this.closeVideoRoom()
       this.bMessage = true
       // clearTimeout(this.timer)
       // this.timer = null
@@ -477,9 +477,9 @@ export default {
       })
 
       // 远端视频流断开连接，挂断本地流
-      this.client.on('peer-leave', (event) => {
+      this.client.on('peer-leave', async (event) => {
         this.leave()
-        this.closeVideoRoom()
+        await this.closeVideoRoom()
         this.btnCall = true
         this.btnOff = false
         this.bMessage = true
