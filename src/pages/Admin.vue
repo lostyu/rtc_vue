@@ -13,7 +13,9 @@
     <audio class="audio" loop controls ref="a1" src="../assets/weixin.mp3" />
     <div class="container">
       <div class="main">
-        <div class="debug" style="display: none">
+        <div class="debug" style="display: -none">
+          timerList: {{timerList}}
+          <br />
           modalInfo: {{modalInfo}}
           {{newCallStatus}}
           <br />
@@ -98,6 +100,13 @@
             </div>
           </div>-->
           <div id="local_stream"></div>
+          <Person
+            style="position: absolute; left:0; top: 0;"
+            v-show="!status"
+            :width="width"
+            :height="height"
+            ref="person"
+          />
         </div>
         <div class="title">{{deptName}}</div>
         <div class="btns">
@@ -116,8 +125,9 @@ import config from '@/config'
 import devices from '@/utils/devices'
 import api from '@/config/api'
 import ReconnectingWebSocket from 'reconnecting-websocket'
-
 import Person from '@/components/Animate/Person'
+
+import '@/assets/css/common.less'
 
 export default {
   components: {
@@ -125,6 +135,13 @@ export default {
   },
   data() {
     return {
+      // 253px  353px  1024
+      // 388px  398px  1920
+      width: '',
+      height: '',
+
+      timerList: [], // 来电暂存房间列表
+
       sid: this.$route.query.sid, // 获取token用
 
       isShowModal: false,
@@ -188,20 +205,9 @@ export default {
       }
 
       this.rws.onmessage = async (evt) => {
-        const { roomId, type } = JSON.parse(evt.data)
-        if (this.status === 0 && type === 1) {
-          this.$refs.a1.play()
-          clearTimeout(this.timer)
-          this.timer = setTimeout(() => {
-            this.audioStop()
-            this.timer = null
-          }, this.timeout)
-        }
-
-        console.log('收到视频通话请求...')
-
-        // 更新房间列表
-        await this.getRoomList()
+        setTimeout(() => {
+          this.handleMessage(evt)
+        }, 1000)
       }
 
       this.rws.onclose = () => {
@@ -214,6 +220,55 @@ export default {
         console.log('error', evt)
       }
     },
+    async handleMessage(evt) {
+      const obj = JSON.parse(evt.data)
+      const { id, roomId, type } = JSON.parse(evt.data)
+      // type 1呼叫，2关闭，3触发门店端按钮，4接听电话通知其他中控刷新列表
+
+      // 第一个来电，并且中控还未接听状态
+      if (this.status === 0 && type === 1) {
+        this.$refs.a1.play()
+        clearTimeout(this.timer)
+        this.timer = setTimeout(() => {
+          this.audioStop()
+          this.timer = null
+        }, this.timeout)
+      }
+
+      // 收到门店挂断的通知
+      if (type === 2) {
+        // 删除视频请求列表
+        // 停止音乐
+        this.audioStop()
+      }
+
+      if (type === 4) {
+        this.audioStop()
+        // this.leave()
+      }
+
+      console.log('=================================', obj)
+
+      // 30秒未接听自动挂断
+      // if (type === 1) {
+      //   this.autoOffCall(id, roomId)
+      //   this.timerList.push(roomId)
+      // }
+
+      // 更新房间列表
+      await this.getRoomList()
+    },
+    // 自动挂断30秒未接听的来电
+    // autoOffCall(id, roomId) {
+    //   // 如果30秒内，接听了，取消挂断
+    //   const str = 'timer_' + roomId
+    //   this[str] = setTimeout(() => {
+    //     // 请求更新房间状态接口
+    //     // 更新房间
+    //     console.log(id, roomId)
+    //     console.log('==================自动关闭房间完成')
+    //   }, 5000)
+    // },
 
     // 初始化数据
     async initData() {
@@ -227,7 +282,52 @@ export default {
       })
 
       this.bindSocket()
+
+      if (window.screen.width > 1024) {
+        this.width = '388px'
+        this.height = '398px'
+      } else {
+        this.width = '253px'
+        this.height = '353px'
+      }
+      this.$refs.person.start()
+
+      // 绑定浏览器关闭事件
+
+      // window.onbeforeunload = function (e) {
+      //   // Chrome, Safari, Firefox 4+, Opera 12+ , IE 9+
+      //   console.log(123)
+      //   return '关闭提示'
+      // }
+      // window.addEventListener('unload', function (event) {
+      //   alert('123123123')
+      // })
     },
+    // 获取状态房间状态
+    async getStatus(id) {
+      try {
+        const res = await this.$axios.get(api.getStatus, {
+          params: {
+            id,
+          },
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+          },
+          interceptors: {
+            // 为false 时，不再经过某个interceptor
+            request: false,
+            response: false,
+            error: false,
+          },
+        })
+        const { data } = res.data
+        return data
+      } catch (e) {
+        console.log('获取状态信息失败')
+        this.$toast({ message: '获取状态信息失败', duration: 5000 })
+      }
+    },
+
     // 用户点击
     // userClick() {
     //   console.log('1223344')
@@ -264,7 +364,7 @@ export default {
         }
       } catch (e) {
         console.log('获取用户信息失败，请重新登录')
-        this.$toast('获取用户信息失败，请重新登录')
+        this.$toast({ message: '获取用户信息失败，请重新登录', duration: 5000 })
       }
     },
     // 权限控制
@@ -292,12 +392,22 @@ export default {
         // this.callList = data
         if (data.data.length > 0) {
           this.callList = data.data
+          let temp = {}
+          let result = []
+          this.callList.forEach((item, index) => {
+            if (!temp[item.id]) {
+              result.push(item)
+              temp[item.id] = true
+            }
+          })
+
+          this.callList = result
         } else {
           this.callList = []
         }
       } catch (e) {
         console.log('获取房间列表信息失败')
-        this.$toast('获取房间列表信息失败')
+        this.$toast({ message: '获取房间列表信息失败', duration: 5000 })
       }
     },
     // 更新房间状态
@@ -398,6 +508,7 @@ export default {
     },
     // 接听来电
     async fnReceiveCall(item) {
+      // TODO 接听，判断当前会话是否挂断
       // 加入房间
       // 更新状态
       // 获取curStoreInfo
@@ -412,12 +523,20 @@ export default {
       }
     },
     async receiveCall(item) {
-      this.roomId = item.roomId
-      await this.join()
-      this.curStoreInfo = { ...item }
-      this.callList = this.callList.filter((call) => call.id !== item.id)
-      await this.updateStatus(item.id)
-      this.fnReceiveCallStatus()
+      //状态(00发起通话 01通话中 02会员挂断 03通话结束)
+      const { status } = await this.getStatus(item.id)
+
+      if (status === '00') {
+        this.roomId = item.roomId
+        await this.join()
+        this.curStoreInfo = { ...item }
+        this.callList = this.callList.filter((call) => call.id !== item.id)
+        await this.updateStatus(item.id)
+        this.fnReceiveCallStatus()
+        this.rws.send(`中控接听了来电，id:${item.id}, roomID：${item.roomId}`)
+      } else {
+        await this.getRoomList()
+      }
     },
     // 接听电话后更改状态
     fnReceiveCallStatus() {
@@ -633,383 +752,4 @@ export default {
 
 
 <style scoped lang="less">
-.audio {
-  position: absolute;
-  left: -9999px;
-  top: -9999px;
-}
-.debug {
-  position: absolute;
-  z-index: 2;
-  background-color: #fff;
-  width: 1000px;
-  height: 300px;
-}
-
-#local_stream {
-  height: 100%;
-}
-#newCall {
-  height: 100%;
-}
-.green {
-  background-color: #30dd41;
-}
-.red {
-  background-color: #eb3223;
-}
-.gray {
-  background-color: #ababab;
-}
-
-.modal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  z-index: 10;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-
-  .wrap {
-    position: relative;
-    width: 800px;
-    // height: 300px;
-    padding: 60px 20px;
-    background-color: #fff;
-    text-align: center;
-    border-radius: 10px;
-    background-color: rgba(237, 245, 255, 0.94);
-  }
-  .close {
-    position: absolute;
-    right: -10px;
-    top: -10px;
-    width: 30px;
-    height: 30px;
-    line-height: 30px;
-    text-align: center;
-    background-color: #dc372a;
-    border-radius: 50%;
-    font-size: 20px;
-    color: #fff;
-    cursor: pointer;
-  }
-  .title {
-    font-size: 40px;
-    margin-bottom: 60px;
-  }
-  .btns {
-    font-size: 28px;
-    .off,
-    .on {
-      border: none;
-      color: #fff;
-      font-weight: 500;
-      padding: 10px 16px;
-      border-radius: 6px;
-    }
-    .off {
-      background-color: #dc372a;
-      margin-right: 30px;
-    }
-    .on {
-      background-color: #2faf2c;
-    }
-  }
-}
-
-.container {
-  display: flex;
-  height: 100%;
-  padding: 0 50px;
-  margin: 0 auto;
-  // grid-template-columns: repeat(24, 1fr);
-  // grid-template-rows: repeat(24, 1fr);
-
-  .main {
-    position: relative;
-    background: url('../assets/img/remote.png') top center no-repeat;
-    background-size: 100% 100%;
-    width: 1160px;
-    min-width: 1160px;
-    height: 977px;
-    margin-right: 95px;
-
-    .remoteBox {
-      position: absolute;
-      top: 96px;
-      left: 65px;
-      width: 1030px;
-      height: 681px;
-      background: #0b1333 url('../assets/img/logo-text.png') center no-repeat;
-      > div {
-        height: 100%;
-      }
-    }
-    .statusList {
-      position: absolute;
-      top: 517px;
-      left: 50%;
-      margin-left: -195px;
-      width: 390px;
-      height: 260px;
-      background-color: rgba(23, 20, 65, 0.95);
-      border: 1px solid #535071;
-      border-radius: 4px 4px 0px 0px;
-      overflow-y: auto;
-
-      &::-webkit-scrollbar {
-        width: 4px;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background-color: #535071;
-      }
-
-      &::-webkit-scrollbar-track {
-        background-color: #fff;
-      }
-
-      ul {
-        padding: 10px 30px;
-        li {
-          position: relative;
-          padding: 15px 0;
-          font-size: 22px;
-          color: #fff;
-          border-bottom: 1px solid #535071;
-          cursor: pointer;
-          &:hover .text {
-            color: #faf51f;
-          }
-          &:last-child {
-            border-bottom: none;
-          }
-          .text {
-            display: inline-block;
-            max-width: 240px;
-          }
-          .zt {
-            position: absolute;
-            right: 0;
-            i {
-              display: inline-block;
-              margin-right: 5px;
-              width: 16px;
-              height: 16px;
-              border-radius: 50%;
-            }
-          }
-        }
-      }
-    }
-    .remoteTitle {
-      position: absolute;
-      top: 777px;
-      left: 65px;
-      width: 1030px;
-      height: 78px;
-      line-height: 78px;
-      background-color: #2b2d55;
-      text-align: center;
-
-      .groupItem {
-        position: relative;
-        display: inline-block;
-        padding-right: 50px;
-        // background: url('../assets/img/arrow.png') center right -10px no-repeat;
-        .dot {
-          display: inline-block;
-          width: 16px;
-          height: 16px;
-          margin-right: 30px;
-          border-radius: 50%;
-        }
-
-        .text {
-          font-size: 36px;
-          color: #fff;
-          cursor: pointer;
-        }
-        .arrow {
-          position: absolute;
-          right: 0;
-          top: 50%;
-          margin-top: -12px;
-          height: 24px;
-          width: 38px;
-          background: url('../assets/img/arrow_down.png') no-repeat;
-          background-size: 100% 100%;
-          transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          transform-origin: center 40%;
-        }
-        .active {
-          transform: rotateZ(180deg);
-        }
-      }
-    }
-  }
-  .side {
-    position: relative;
-    margin-top: 120px;
-    width: 500px;
-    min-width: 500px;
-    height: 760px;
-    background: url('../assets/img/local.png') no-repeat;
-    background-size: 100% 100%;
-    padding: 36px 58px 0 54px;
-    .text {
-      height: 67px;
-      position: relative;
-
-      .fromCall {
-        position: relative;
-        height: 67px;
-        line-height: 67px;
-        margin: 0 20px;
-        color: #fff;
-        font-size: 20px;
-
-        .item {
-          display: inline-block;
-          width: 290px;
-          max-width: 290px;
-          text-overflow: ellipsis;
-          overflow: hidden;
-          white-space: nowrap;
-          cursor: pointer;
-        }
-        .icon {
-          cursor: pointer;
-          position: absolute;
-          right: 0;
-          top: 50%;
-          margin-top: -12px;
-          height: 24px;
-          width: 38px;
-          background: url('../assets/img/arrow.png') no-repeat;
-          background-size: 100% 100%;
-          transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .revert {
-          // transform: translateY(180deg);
-          transform: rotateZ(180deg);
-        }
-      }
-      .fromCallNum {
-        position: absolute;
-        top: -18px;
-        right: -18px;
-        width: 36px;
-        height: 36px;
-        line-height: 36px;
-        text-align: center;
-        border-radius: 50%;
-        background-color: #eb3223;
-        color: #fff;
-        cursor: pointer;
-      }
-    }
-    .fromCallList {
-      position: absolute;
-      z-index: 2;
-      top: 103px;
-      left: 54px;
-      width: 388px;
-      height: 432px;
-      background-color: rgba(23, 20, 65, 0.95);
-      overflow-y: auto;
-
-      &::-webkit-scrollbar {
-        width: 4px;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background-color: #535071;
-      }
-
-      &::-webkit-scrollbar-track {
-        background-color: #fff;
-      }
-      ul {
-        padding: 10px 30px;
-        li {
-          position: relative;
-          padding: 15px 0;
-          font-size: 20px;
-          color: #fff;
-          border-bottom: 1px solid #535071;
-
-          &:last-child {
-            border-bottom: none;
-          }
-          .text2 {
-            display: inline-block;
-            max-width: 240px;
-          }
-          .zt {
-            position: absolute;
-            right: 0;
-            .call,
-            .offcall {
-              display: inline-block;
-              width: 28px;
-              height: 28px;
-            }
-            .call {
-              margin-right: 10px;
-              background: url('../assets/img/call-icon1.png') no-repeat;
-            }
-            .offcall {
-              background: url('../assets/img/call-icon2.png') no-repeat;
-            }
-            i {
-              display: inline-block;
-              margin-right: 5px;
-              width: 16px;
-              height: 16px;
-              border-radius: 50%;
-            }
-          }
-        }
-      }
-    }
-    .video {
-      margin-top: 34px;
-      height: 398px;
-      background: url('../assets/img/photo.png') center bottom no-repeat;
-      background-size: auto;
-    }
-    .title {
-      height: 66px;
-      line-height: 66px;
-      text-align: center;
-      font-size: 28px;
-      color: #fff;
-    }
-    .btns {
-      height: 158px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      .call,
-      .off {
-        width: 152px;
-        height: 150px;
-        cursor: pointer;
-      }
-      .call {
-        background: url('../assets/img/on.png') no-repeat;
-      }
-      .off {
-        background: url('../assets/img/off.png') no-repeat;
-      }
-    }
-  }
-}
 </style>

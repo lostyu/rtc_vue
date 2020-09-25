@@ -6,6 +6,7 @@ module.exports = {
   videoList: '/erpApi/video/selectList', // 获取视频列表
   updateStatus: '/erpApi/video/updateStatus', // 更新房间状态
   closeVideoRoomAdmin: '/erpApi/video/closeVideoRoom', // 中控关闭房间
+  getStatus: '/erpApi/video/getStatus', // 获取状态
 
   // ==============门店=============
   createVideoRoom: '/baseApi/app/personalCenter/createVideoRoomByMd', // 创建房间

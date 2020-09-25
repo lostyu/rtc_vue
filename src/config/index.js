@@ -12,6 +12,10 @@ module.exports = {
 // 获取认证用户信息
 // erpUrl/user/getAdminLoginInfo?sid=d0109206-31cf-4e38-8e15-b05feb36565a
 
+// 获取状态
+// 返回值 status 状态(00发起通话 01通话中 02会员挂断 03通话结束)
+// http://192.168.0.230:8085/video/getStatus
+
 // ===============门店端==============
 // 创建房间
 // baseUrl/app/personalCenter/createVideoRoomByMd?roomId=12345&deptId=1&deptName=2

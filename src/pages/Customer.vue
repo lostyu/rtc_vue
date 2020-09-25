@@ -2,7 +2,11 @@
   <div>
     <div class="container">
       <div class="main">
-        <div class="debug" style="display:none">
+        <div class="debug" style="display:-none">
+          canBtnOff: {{canBtnOff}}
+          <br />
+          bmessage: {{bMessage}}
+          <br />
           timer: {{timer}}
           <br />
           deptName: {{deptName}}
@@ -37,6 +41,13 @@
         <div class="text"></div>
         <div class="video">
           <div id="local_stream"></div>
+          <Person
+            style="position: absolute; left:0; top: 0;"
+            v-show="!status"
+            :width="width"
+            :height="height"
+            ref="person"
+          />
         </div>
         <div class="title">{{deptName}}</div>
         <div class="btns">
@@ -56,9 +67,22 @@ import api from '@/config/api'
 // import { v4 as uuidv4 } from 'uuid'
 import ReconnectingWebSocket from 'reconnecting-websocket'
 
+import Person from '@/components/Animate/Person'
+
+import '@/assets/css/common.less'
+
 export default {
+  components: {
+    Person,
+  },
   data() {
     return {
+      // 253px  353px  1024
+      // 388px  398px  1920
+      canBtnOff: false, // 默认不能挂断，要2秒后才能挂
+      isConnectSocket: false, // 是否连接到socket
+      width: '',
+      height: '',
       bMessage: true, // 避免多次收到推送消息
       sid: this.$route.query.sid, // 获取token用
       isShowModal: false,
@@ -130,10 +154,20 @@ export default {
         debug: true,
       })
       this.bindSocket()
+
+      if (window.screen.width > 1024) {
+        this.width = '388px'
+        this.height = '398px'
+      } else {
+        this.width = '253px'
+        this.height = '353px'
+      }
+      this.$refs.person.start()
     },
     // socket
     bindSocket() {
       this.rws.onopen = () => {
+        this.isConnectSocket = true
         this.rws.send('门店连接到视频通话...')
         console.log('门店连接到视频通话...')
       }
@@ -163,12 +197,13 @@ export default {
       this.rws.onclose = () => {
         this.rws.send('门店断开连接...')
         console.log('门店断开连接...')
-        this.handleBtnOff()
+        // this.handleBtnOff()
         // this.rws.close()
       }
 
       this.rws.onerror = (evt) => {
-        console.error(evt)
+        this.$toast({ message: '网络错误，请联系管理员', duration: 5000 })
+        console.error('==11123=231=23=123=1=31=23=12=3=123', evt)
       }
     },
     async getUserInfo() {
@@ -200,7 +235,7 @@ export default {
         }
       } catch (e) {
         console.log('获取用户信息失败，请重新登录')
-        this.$toast('获取用户信息失败，请重新登录')
+        this.$toast({ message: '获取用户信息失败，请重新登录', duration: 5000 })
       }
     },
 
@@ -313,21 +348,46 @@ export default {
     },
     // 拨打按钮 customer显示
     async handleBtnCall() {
+      // 判断是否获取到用户信息
+      if (!this.deptId) {
+        return
+      }
+      // 判断是否连接到socket
+      if (!this.isConnectSocket) {
+        return
+      }
+      if (!this.bMessage) {
+        return
+      }
+
+      this.bMessage = false
       // 创建房间，随机生成房间号
       if (!this.isJoined) {
         this.randomRoomId()
         await this.join()
         await this.createRoom()
+
+        setTimeout(() => {
+          this.canBtnOff = true
+        }, 2000)
+
+        this.timer = setTimeout(() => {
+          this.handleBtnOff()
+          this.timer = null
+        }, this.timeout)
       }
     },
     // 挂断大按钮
     async handleBtnOff() {
-      await this.leave()
-      this.settingOffCall()
-      await this.closeVideoRoom()
-      this.bMessage = true
-      // clearTimeout(this.timer)
-      // this.timer = null
+      if (this.canBtnOff) {
+        this.canBtnOff = false
+        await this.leave()
+        this.settingOffCall()
+        await this.closeVideoRoom()
+        this.bMessage = true
+        clearTimeout(this.timer)
+        this.timer = null
+      }
     },
 
     // ================= RTC
@@ -371,7 +431,6 @@ export default {
           await this.client.join({ roomId: this.roomId })
           this.isJoined = true
           console.log('加入房间成功', this.userId)
-          resolve()
 
           // 创建本地流
           this.localStream = TRTC.createStream({
@@ -388,6 +447,7 @@ export default {
           this.localStream.play('local_stream')
           // 推流
           await this.publish()
+          resolve()
         } catch (e) {
           console.log('加入房间失败', e)
           reject('加入房间失败', e)
@@ -487,8 +547,8 @@ export default {
 
       this.client.on('peer-join', (event) => {
         console.log('======================== peer-join')
-        // clearTimeout(this.timer)
-        // this.timer = null
+        clearTimeout(this.timer)
+        this.timer = null
       })
     },
   },
@@ -505,372 +565,4 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 
 <style scoped lang="less">
-.debug {
-  position: absolute;
-  z-index: 2;
-  background-color: #fff;
-  width: 1000px;
-  height: 300px;
-}
-
-#local_stream {
-  height: 100%;
-}
-.green {
-  background-color: #30dd41;
-}
-.red {
-  background-color: #eb3223;
-}
-.gray {
-  background-color: #ababab;
-}
-
-.modal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  z-index: 2;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-
-  .wrap {
-    position: relative;
-    width: 800px;
-    // height: 300px;
-    padding: 60px 20px;
-    background-color: #fff;
-    text-align: center;
-    border-radius: 10px;
-    background-color: rgba(237, 245, 255, 0.94);
-  }
-  .close {
-    position: absolute;
-    right: -10px;
-    top: -10px;
-    width: 30px;
-    height: 30px;
-    line-height: 30px;
-    text-align: center;
-    background-color: #dc372a;
-    border-radius: 50%;
-    font-size: 20px;
-    color: #fff;
-    cursor: pointer;
-  }
-  .title {
-    font-size: 40px;
-    margin-bottom: 60px;
-  }
-  .btns {
-    font-size: 28px;
-    .off,
-    .on {
-      border: none;
-      color: #fff;
-      font-weight: 500;
-      padding: 10px 16px;
-      border-radius: 6px;
-    }
-    .off {
-      background-color: #dc372a;
-      margin-right: 30px;
-    }
-    .on {
-      background-color: #2faf2c;
-    }
-  }
-}
-
-.container {
-  display: flex;
-  height: 100%;
-  padding: 0 50px;
-  margin: 0 auto;
-  // grid-template-columns: repeat(24, 1fr);
-  // grid-template-rows: repeat(24, 1fr);
-
-  .main {
-    position: relative;
-    background: url('../assets/img/remote.png') top center no-repeat;
-    background-size: 100% 100%;
-    width: 1160px;
-    height: 977px;
-    margin-right: 95px;
-
-    .remoteBox {
-      position: absolute;
-      top: 96px;
-      left: 65px;
-      width: 1030px;
-      height: 681px;
-      background: #0b1333 url('../assets/img/logo-text.png') center no-repeat;
-      > div {
-        height: 100%;
-      }
-    }
-    .statusList {
-      position: absolute;
-      top: 517px;
-      left: 50%;
-      margin-left: -195px;
-      width: 390px;
-      height: 260px;
-      background-color: rgba(23, 20, 65, 0.95);
-      border: 1px solid #535071;
-      border-radius: 4px 4px 0px 0px;
-      overflow-y: auto;
-
-      &::-webkit-scrollbar {
-        width: 4px;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background-color: #535071;
-      }
-
-      &::-webkit-scrollbar-track {
-        background-color: #fff;
-      }
-
-      ul {
-        padding: 10px 30px;
-        li {
-          position: relative;
-          padding: 15px 0;
-          font-size: 22px;
-          color: #fff;
-          border-bottom: 1px solid #535071;
-          cursor: pointer;
-          &:hover .text {
-            color: #faf51f;
-          }
-          &:last-child {
-            border-bottom: none;
-          }
-          .text {
-            display: inline-block;
-            max-width: 240px;
-          }
-          .zt {
-            position: absolute;
-            right: 0;
-            i {
-              display: inline-block;
-              margin-right: 5px;
-              width: 16px;
-              height: 16px;
-              border-radius: 50%;
-            }
-          }
-        }
-      }
-    }
-    .remoteTitle {
-      position: absolute;
-      top: 777px;
-      left: 65px;
-      width: 1030px;
-      height: 78px;
-      line-height: 78px;
-      background-color: #2b2d55;
-      text-align: center;
-
-      .groupItem {
-        position: relative;
-        display: inline-block;
-        padding-right: 50px;
-        // background: url('../assets/img/arrow.png') center right -10px no-repeat;
-        .dot {
-          display: inline-block;
-          width: 16px;
-          height: 16px;
-          margin-right: 30px;
-          border-radius: 50%;
-        }
-
-        .text {
-          font-size: 36px;
-          color: #fff;
-          cursor: pointer;
-        }
-        .arrow {
-          position: absolute;
-          right: 0;
-          top: 50%;
-          margin-top: -12px;
-          height: 24px;
-          width: 38px;
-          background: url('../assets/img/arrow_down.png') no-repeat;
-          background-size: 100% 100%;
-          transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          transform-origin: center 40%;
-        }
-        .active {
-          transform: rotateZ(180deg);
-        }
-      }
-    }
-  }
-  .side {
-    position: relative;
-    margin-top: 120px;
-    width: 500px;
-    height: 760px;
-    background: url('../assets/img/local.png') no-repeat;
-    background-size: 100% 100%;
-    padding: 36px 58px 0 54px;
-    .text {
-      height: 67px;
-      position: relative;
-
-      .fromCall {
-        position: relative;
-        height: 67px;
-        line-height: 67px;
-        margin: 0 20px;
-        color: #fff;
-        font-size: 20px;
-
-        .item {
-          display: inline-block;
-          width: 290px;
-          max-width: 290px;
-          text-overflow: ellipsis;
-          overflow: hidden;
-          white-space: nowrap;
-          cursor: pointer;
-        }
-        .icon {
-          cursor: pointer;
-          position: absolute;
-          right: 0;
-          top: 50%;
-          margin-top: -12px;
-          height: 24px;
-          width: 38px;
-          background: url('../assets/img/arrow.png') no-repeat;
-          background-size: 100% 100%;
-          transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .revert {
-          // transform: translateY(180deg);
-          transform: rotateZ(180deg);
-        }
-      }
-      .fromCallNum {
-        position: absolute;
-        top: -18px;
-        right: -18px;
-        width: 36px;
-        height: 36px;
-        line-height: 36px;
-        text-align: center;
-        border-radius: 50%;
-        background-color: #eb3223;
-        color: #fff;
-        cursor: pointer;
-      }
-    }
-    .fromCallList {
-      position: absolute;
-      top: 103px;
-      left: 54px;
-      width: 388px;
-      height: 432px;
-      background-color: rgba(23, 20, 65, 0.95);
-      overflow-y: auto;
-
-      &::-webkit-scrollbar {
-        width: 4px;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background-color: #535071;
-      }
-
-      &::-webkit-scrollbar-track {
-        background-color: #fff;
-      }
-      ul {
-        padding: 10px 30px;
-        li {
-          position: relative;
-          padding: 15px 0;
-          font-size: 20px;
-          color: #fff;
-          border-bottom: 1px solid #535071;
-
-          &:last-child {
-            border-bottom: none;
-          }
-          .text2 {
-            display: inline-block;
-            max-width: 240px;
-          }
-          .zt {
-            position: absolute;
-            right: 0;
-            .call,
-            .offcall {
-              display: inline-block;
-              width: 28px;
-              height: 28px;
-            }
-            .call {
-              margin-right: 10px;
-              background: url('../assets/img/call-icon1.png') no-repeat;
-            }
-            .offcall {
-              background: url('../assets/img/call-icon2.png') no-repeat;
-            }
-            i {
-              display: inline-block;
-              margin-right: 5px;
-              width: 16px;
-              height: 16px;
-              border-radius: 50%;
-            }
-          }
-        }
-      }
-    }
-    .video {
-      margin-top: 34px;
-      height: 398px;
-      background: url('../assets/img/photo.png') center bottom no-repeat;
-      background-size: auto;
-    }
-    .title {
-      height: 66px;
-      line-height: 66px;
-      text-align: center;
-      font-size: 28px;
-      color: #fff;
-    }
-    .btns {
-      height: 158px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      .call,
-      .off {
-        width: 152px;
-        height: 150px;
-        cursor: pointer;
-      }
-      .call {
-        background: url('../assets/img/on.png') no-repeat;
-      }
-      .off {
-        background: url('../assets/img/off.png') no-repeat;
-      }
-    }
-  }
-}
 </style>
