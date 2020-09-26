@@ -1,8 +1,11 @@
 <template>
   <div>
+    <audio class="audio" loop controls ref="a1" src="../assets/weixin.mp3" />
     <div class="container">
       <div class="main">
-        <div class="debug" style="display:-none">
+        <div class="debug" style="display:none">
+          authored:{{authored}}
+          <br />
           canBtnOff: {{canBtnOff}}
           <br />
           bmessage: {{bMessage}}
@@ -109,6 +112,7 @@ export default {
       roomId: '',
       timeout: 30000, // 通话超时 30秒
       timer: null, // 定时器
+      audioTimer: null,
 
       // ======================= RTC
       sdkAppId: '',
@@ -132,6 +136,10 @@ export default {
     },
     storeNum() {
       return this.storeList.length
+    },
+    // 权限校验，socket是否连通，是否获取到user信息
+    authored() {
+      return this.isConnectSocket && this.deptName !== ''
     },
   },
   mounted() {
@@ -164,6 +172,7 @@ export default {
       }
       this.$refs.person.start()
     },
+
     // socket
     bindSocket() {
       this.rws.onopen = () => {
@@ -189,7 +198,6 @@ export default {
           if (this.bMessage) {
             console.log('333333333333333333333333333')
             this.handleBtnCall()
-            this.bMessage = false
           }
         }
       }
@@ -197,6 +205,7 @@ export default {
       this.rws.onclose = () => {
         this.rws.send('门店断开连接...')
         console.log('门店断开连接...')
+        this.isConnectSocket = false
         // this.handleBtnOff()
         // this.rws.close()
       }
@@ -204,6 +213,7 @@ export default {
       this.rws.onerror = (evt) => {
         this.$toast({ message: '网络错误，请联系管理员', duration: 5000 })
         console.error('==11123=231=23=123=1=31=23=12=3=123', evt)
+        this.isConnectSocket = false
       }
     },
     async getUserInfo() {
@@ -257,7 +267,11 @@ export default {
       }
       this.showStoreList = !this.showStoreList
     },
-
+    audioStop() {
+      clearTimeout(this.audioTimer)
+      this.$refs.a1.currentTime = 0
+      this.$refs.a1.pause()
+    },
     hideModal() {
       this.isShowModal = false
     },
@@ -348,17 +362,19 @@ export default {
     },
     // 拨打按钮 customer显示
     async handleBtnCall() {
-      // 判断是否获取到用户信息
-      if (!this.deptId) {
-        return
-      }
-      // 判断是否连接到socket
-      if (!this.isConnectSocket) {
+      if (!this.authored) {
         return
       }
       if (!this.bMessage) {
         return
       }
+
+      this.$refs.a1.play()
+      clearTimeout(this.audioTimer)
+      this.audioTimer = setTimeout(() => {
+        this.audioStop()
+        this.audioTimer = null
+      }, this.timeout)
 
       this.bMessage = false
       // 创建房间，随机生成房间号
@@ -374,6 +390,7 @@ export default {
         this.timer = setTimeout(() => {
           this.handleBtnOff()
           this.timer = null
+          this.audioStop()
         }, this.timeout)
       }
     },
@@ -387,6 +404,8 @@ export default {
         this.bMessage = true
         clearTimeout(this.timer)
         this.timer = null
+
+        this.audioStop()
       }
     },
 
@@ -549,6 +568,8 @@ export default {
         console.log('======================== peer-join')
         clearTimeout(this.timer)
         this.timer = null
+
+        this.audioStop()
       })
     },
   },

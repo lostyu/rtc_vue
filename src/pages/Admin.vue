@@ -13,8 +13,8 @@
     <audio class="audio" loop controls ref="a1" src="../assets/weixin.mp3" />
     <div class="container">
       <div class="main">
-        <div class="debug" style="display: -none">
-          timerList: {{timerList}}
+        <div class="debug" style="display: none">
+          status:{{status}}
           <br />
           modalInfo: {{modalInfo}}
           {{newCallStatus}}
@@ -70,8 +70,8 @@
             <li v-for="item in callList" :key="item.id">
               <span class="text2">{{item.name}}</span>
               <span class="zt">
-                <a @click="fnReceiveCall(item)" class="call" href="javascript:;"></a>
-                <a @click="fnHangUpNoAnswerCall(item)" class="offcall" href="javascript:;"></a>
+                <a @click.once="fnReceiveCall(item)" class="call" href="javascript:;"></a>
+                <a @click.once="fnHangUpNoAnswerCall(item)" class="offcall" href="javascript:;"></a>
               </span>
             </li>
           </ul>
@@ -140,7 +140,7 @@ export default {
       width: '',
       height: '',
 
-      timerList: [], // 来电暂存房间列表
+      timerMap: {}, //
 
       sid: this.$route.query.sid, // 获取token用
 
@@ -250,25 +250,30 @@ export default {
       console.log('=================================', obj)
 
       // 30秒未接听自动挂断
-      // if (type === 1) {
-      //   this.autoOffCall(id, roomId)
-      //   this.timerList.push(roomId)
-      // }
+      if (type === 1) {
+        this.autoOffCall(id, roomId)
+        // this.timerList.push(roomId)
+      }
 
       // 更新房间列表
       await this.getRoomList()
     },
     // 自动挂断30秒未接听的来电
-    // autoOffCall(id, roomId) {
-    //   // 如果30秒内，接听了，取消挂断
-    //   const str = 'timer_' + roomId
-    //   this[str] = setTimeout(() => {
-    //     // 请求更新房间状态接口
-    //     // 更新房间
-    //     console.log(id, roomId)
-    //     console.log('==================自动关闭房间完成')
-    //   }, 5000)
-    // },
+    autoOffCall(id, roomId) {
+      // 如果30秒内，接听了，取消挂断
+      const str = 'timer_' + roomId
+      this.timerMap[roomId] = setTimeout(async () => {
+        // 请求更新房间状态接口
+        // 更新房间
+        console.log(id, roomId)
+        console.log('==================自动关闭房间完成')
+
+        // 真实挂断
+        // api
+        await this.hangupCall(roomId)
+        this.callList = this.callList.filter((call) => call.id !== id)
+      }, this.timeout)
+    },
 
     // 初始化数据
     async initData() {
@@ -325,6 +330,7 @@ export default {
       } catch (e) {
         console.log('获取状态信息失败')
         this.$toast({ message: '获取状态信息失败', duration: 5000 })
+        return -1
       }
     },
 
@@ -392,16 +398,16 @@ export default {
         // this.callList = data
         if (data.data.length > 0) {
           this.callList = data.data
-          let temp = {}
-          let result = []
-          this.callList.forEach((item, index) => {
-            if (!temp[item.id]) {
-              result.push(item)
-              temp[item.id] = true
-            }
-          })
+          // let temp = {}
+          // let result = []
+          // this.callList.forEach((item, index) => {
+          //   if (!temp[item.id]) {
+          //     result.push(item)
+          //     temp[item.id] = true
+          //   }
+          // })
 
-          this.callList = result
+          // this.callList = result
         } else {
           this.callList = []
         }
@@ -523,10 +529,12 @@ export default {
       }
     },
     async receiveCall(item) {
+      console.log('清除timer：', item.roomId, '===', this.timerMap[item.roomId])
+      clearTimeout(this.timerMap[item.roomId])
       //状态(00发起通话 01通话中 02会员挂断 03通话结束)
-      const { status } = await this.getStatus(item.id)
+      const data = await this.getStatus(item.id)
 
-      if (status === '00') {
+      if (data === 0) {
         this.roomId = item.roomId
         await this.join()
         this.curStoreInfo = { ...item }
@@ -535,6 +543,7 @@ export default {
         this.fnReceiveCallStatus()
         this.rws.send(`中控接听了来电，id:${item.id}, roomID：${item.roomId}`)
       } else {
+        alert('当前视频通话已被其他客服接听')
         await this.getRoomList()
       }
     },
@@ -545,10 +554,10 @@ export default {
       this.showCallList = false
       this.audioStop()
     },
-    // 挂断还未接听的电话
+    // 挂断还未接听的电话，不做实际后台交互请求（只是本地屏蔽本条数据）
     async fnHangUpNoAnswerCall(item) {
       // api
-      await this.hangupCall(item.roomId)
+      // await this.hangupCall(item.roomId)
       this.callList = this.callList.filter((call) => call.id !== item.id)
       this.audioStop()
     },
