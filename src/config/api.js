@@ -1,3 +1,4 @@
+// dev
 module.exports = {
   // 获取用户信息
   getAdminLoginInfo: '/erpApi/user/getAdminLoginInfo',
@@ -12,3 +13,19 @@ module.exports = {
   createVideoRoom: '/baseApi/app/personalCenter/createVideoRoomByMd', // 创建房间
   closeVideoRoom: '/baseApi/app/personalCenter/closeVideoRoom' // 关闭房间
 }
+
+// prod
+// module.exports = {
+//   // 获取用户信息
+//   getAdminLoginInfo: '/user/getAdminLoginInfo',
+
+//   // ==============中控=============
+//   videoList: '/video/selectList', // 获取视频列表
+//   updateStatus: '/video/updateStatus', // 更新房间状态
+//   closeVideoRoomAdmin: '/video/closeVideoRoom', // 中控关闭房间
+//   getStatus: '/video/getStatus', // 获取状态
+
+//   // ==============门店=============
+//   createVideoRoom: '/app/personalCenter/createVideoRoomByMd', // 创建房间
+//   closeVideoRoom: '/app/personalCenter/closeVideoRoom' // 关闭房间
+// }

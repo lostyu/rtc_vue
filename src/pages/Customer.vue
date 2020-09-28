@@ -80,6 +80,7 @@ export default {
   },
   data() {
     return {
+      testId: 0,
       // 253px  353px  1024
       // 388px  398px  1920
       canBtnOff: false, // 默认不能挂断，要2秒后才能挂
@@ -155,7 +156,11 @@ export default {
       await this.getUserInfo()
       // socket
       let protocol = location.protocol === 'http' ? 'ws' : 'wss'
+      // dev
       const url = `${protocol}://${location.host}/socket/video/connect?deptId=${this.curUserInfo.deptId}`
+
+      // prod
+      // const url = `${protocol}://${location.host}/video/connect?deptId=${this.curUserInfo.deptId}`
       console.log('==============================', url)
 
       this.rws = new ReconnectingWebSocket(url, [], {
@@ -190,6 +195,8 @@ export default {
 
         // type等于2，关闭
         if (type === 2) {
+          this.testId++
+          console.log('@@@@我是socket message type===2，api调用了关闭房间接口', this.testId)
           this.handleBtnOff()
         }
 
@@ -238,7 +245,7 @@ export default {
           const { accessToken, refreshToken } = data.data
           this.$store.commit('REFRESH_USER', { accessToken, refreshToken })
           this.curUserInfo = data.data
-          this.userId = data.data.departmentName
+          this.userId = data.data.userCode
           this.deptId = data.data.deptId
           this.deptName = data.data.departmentName
           this.accessToken = accessToken
@@ -400,6 +407,8 @@ export default {
         this.canBtnOff = false
         await this.leave()
         this.settingOffCall()
+        this.testId++
+        console.log('@@@@挂断大按钮', this.testId)
         await this.closeVideoRoom()
         this.bMessage = true
         clearTimeout(this.timer)
@@ -562,6 +571,8 @@ export default {
         this.btnCall = true
         this.btnOff = false
         this.bMessage = true
+
+        console.log('peer-leave..............')
       })
 
       this.client.on('peer-join', (event) => {

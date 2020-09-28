@@ -1,3 +1,16 @@
+// prod
+// module.exports = {
+//   // https://xxcg.com/xxx/xxx
+
+//   baseUrl: 'http://192.168.0.230:8075',
+//   //   baseUrl: 'http://192.168.0.128:8087', // http://192.168.0.150:8075/personalCenter/createVideoRoom
+//   //   baseUrl: 'http://192.168.0.212:8075', // http://192.168.0.150:8075/personalCenter/createVideoRoom
+//   erpUrl: 'http://192.168.0.230:8085',
+//   socketUrl: 'ws://192.168.0.230:8083'
+//   // socketUrl: 'ws://192.168.0.200:8083'
+// }
+
+// dev
 module.exports = {
   // https://xxcg.com/xxx/xxx
 

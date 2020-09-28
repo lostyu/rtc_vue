@@ -13,7 +13,9 @@
     <audio class="audio" loop controls ref="a1" src="../assets/weixin.mp3" />
     <div class="container">
       <div class="main">
-        <div class="debug" style="display: none">
+        <div class="debug" style="display: -none">
+          timerMap: {{timerMap}}
+          <br />
           status:{{status}}
           <br />
           modalInfo: {{modalInfo}}
@@ -245,6 +247,11 @@ export default {
       if (type === 4) {
         this.audioStop()
         // this.leave()
+        // this.timerMap[]
+        // console.log(4444444444444444444444444)
+        // console.log('4444444444444444444444444444', obj)
+        clearTimeout(this.timerMap[roomId])
+        console.log('清空了定时器')
       }
 
       console.log('=================================', obj)
@@ -252,7 +259,7 @@ export default {
       // 30秒未接听自动挂断
       if (type === 1) {
         this.autoOffCall(id, roomId)
-        // this.timerList.push(roomId)
+        // console.log(id, roomId)
       }
 
       // 更新房间列表
@@ -261,8 +268,8 @@ export default {
     // 自动挂断30秒未接听的来电
     autoOffCall(id, roomId) {
       // 如果30秒内，接听了，取消挂断
-      const str = 'timer_' + roomId
-      this.timerMap[roomId] = setTimeout(async () => {
+
+      this.timerMap[roomId] = setTimeout(() => {
         // 请求更新房间状态接口
         // 更新房间
         console.log(id, roomId)
@@ -270,16 +277,22 @@ export default {
 
         // 真实挂断
         // api
-        await this.hangupCall(roomId)
+
+        this.hangupCall(roomId)
         this.callList = this.callList.filter((call) => call.id !== id)
       }, this.timeout)
+      console.log('开启定时器', this.timerMap[roomId], roomId)
     },
 
     // 初始化数据
     async initData() {
       await this.getUserInfo()
       let protocol = location.protocol === 'http' ? 'ws' : 'wss'
+      // dev
       const url = `${protocol}://${location.host}/socket/video/connect?userId=${this.curUserInfo.userId}`
+
+      // prod
+      // const url = `${protocol}://${location.host}/video/connect?userId=${this.curUserInfo.userId}`
       console.log(url)
 
       this.rws = new ReconnectingWebSocket(url, [], {
@@ -363,7 +376,7 @@ export default {
           const { accessToken, refreshToken } = data.data
           this.$store.commit('REFRESH_USER', { accessToken, refreshToken })
           this.curUserInfo = data.data
-          this.userId = data.data.departmentName
+          this.userId = data.data.userCode
           this.deptId = data.data.deptId
           this.deptName = data.data.departmentName
           this.accessToken = accessToken
@@ -417,7 +430,7 @@ export default {
       }
     },
     // 更新房间状态
-    async updateStatus(id) {
+    async updateStatus(id, roomId) {
       if (!id) {
         return
       }
@@ -425,6 +438,7 @@ export default {
         const res = await this.$axios.get(api.updateStatus, {
           params: {
             id,
+            roomId,
           },
           headers: {
             Authorization: `Bearer ${this.accessToken}`,
@@ -529,17 +543,20 @@ export default {
       }
     },
     async receiveCall(item) {
-      console.log('清除timer：', item.roomId, '===', this.timerMap[item.roomId])
+      console.log('清除timer：', this.timerMap[item.roomId], '===', item.roomId)
       clearTimeout(this.timerMap[item.roomId])
+      this.$set(this.timerMap, item.roomId, null)
+
       //状态(00发起通话 01通话中 02会员挂断 03通话结束)
       const data = await this.getStatus(item.id)
 
       if (data === 0) {
+        console.log('可以接听电话.....')
         this.roomId = item.roomId
         await this.join()
         this.curStoreInfo = { ...item }
         this.callList = this.callList.filter((call) => call.id !== item.id)
-        await this.updateStatus(item.id)
+        await this.updateStatus(item.id, item.roomId)
         this.fnReceiveCallStatus()
         this.rws.send(`中控接听了来电，id:${item.id}, roomID：${item.roomId}`)
       } else {
@@ -726,6 +743,7 @@ export default {
 
       // 远端视频流断开连接，挂断本地流
       this.client.on('peer-leave', (event) => {
+        console.log('peer-leave..................')
         this.fnHangUpCall(this.roomId)
       })
     },

@@ -24,7 +24,7 @@ function genTestUserSig(userID) {
    * 它是腾讯云用于区分客户的唯一标识。
    */
 
-  const SDKAPPID = 1400391823
+  const SDKAPPID = 1400432247
 
   /**
    * 签名过期时间，建议不要设置的过短
@@ -45,7 +45,7 @@ function genTestUserSig(userID) {
    * 文档：https://cloud.tencent.com/document/product/647/17275#Server
    */
 
-  const SECRETKEY = '5d56f32a43565b2a673de3da6c67727979e16e1b8370141644e23a6d1bbe2485'
+  const SECRETKEY = '7a0e0d4f3d9dd3f65e7a34013efa7209e05a01fb75cc71403279a6c016108faa'
 
   // a soft reminder to guide developer to configure sdkAppId/secretKey
   if (SDKAPPID === '' || SECRETKEY === '') {
