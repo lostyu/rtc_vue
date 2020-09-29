@@ -3,7 +3,7 @@
     <div v-if="isShowModal" class="modal">
       <div class="wrap">
         <span @click="hideModal" class="close">×</span>
-        <div class="title">接受{{modalInfo.name}}呼叫将中断本次通话</div>
+        <div class="title">接受{{ modalInfo.name }}呼叫将中断本次通话</div>
         <div class="btns">
           <button @click="handleNo(modalInfo)" class="off">挂断</button>
           <button @click="handleOk(modalInfo)" class="on">接受</button>
@@ -13,39 +13,39 @@
     <audio class="audio" loop controls ref="a1" src="../assets/weixin.mp3" />
     <div class="container">
       <div class="main">
-        <div class="debug" style="display: -none">
-          timerMap: {{timerMap}}
+        <div class="debug" style="display: none">
+          timerMap: {{ timerMap }}
           <br />
-          status:{{status}}
+          status:{{ status }}
           <br />
-          modalInfo: {{modalInfo}}
-          {{newCallStatus}}
+          modalInfo: {{ modalInfo }}
+          {{ newCallStatus }}
           <br />
-          curUserInfo.userId: {{curUserInfo.userId}}
+          curUserInfo.userId: {{ curUserInfo.userId }}
           <br />
-          deptName: {{deptName}}
+          deptName: {{ deptName }}
           <br />
-          deptId: {{deptId}}
+          deptId: {{ deptId }}
           <br />
-          roomId: {{roomId}}
+          roomId: {{ roomId }}
           <br />
-          userId: {{userId}}
+          userId: {{ userId }}
           <hr />
-          {{curStoreInfo}}
+          {{ curStoreInfo }}
           <hr />
-          sdkAppId: {{sdkAppId}}
+          sdkAppId: {{ sdkAppId }}
           <br />
           <br />
-          userSig{{userSig}}
+          userSig{{ userSig }}
           <br />
         </div>
         <div class="remoteBox">
-          <div v-for="item in remoteStreamArr" :key="item" :id="'remote_stream_'+item"></div>
+          <div v-for="item in remoteStreamArr" :key="item" :id="'remote_stream_' + item"></div>
         </div>
         <div v-if="showStoreList" class="statusList">
           <ul>
             <li v-for="item in storeList" :key="item.id">
-              <span class="text">{{item.name}}</span>
+              <span class="text">{{ item.name }}</span>
               <span v-if="item.status === 1" class="zt">
                 <i class="green"></i>
                 空闲
@@ -60,8 +60,8 @@
         <div class="remoteTitle">
           <div v-if="curStoreInfo" class="groupItem">
             <span class="dot green"></span>
-            <span @click="toggleStoreList" class="text">{{curStoreInfo.name}}</span>
-            <span class="arrow" :class="{'active': showStoreList}"></span>
+            <span @click="toggleStoreList" class="text">{{ curStoreInfo.name }}</span>
+            <span class="arrow" :class="{ active: showStoreList }"></span>
           </div>
         </div>
       </div>
@@ -70,7 +70,7 @@
         <div v-if="showCallList" class="fromCallList">
           <ul>
             <li v-for="item in callList" :key="item.id">
-              <span class="text2">{{item.name}}</span>
+              <span class="text2">{{ item.name }}</span>
               <span class="zt">
                 <a @click.once="fnReceiveCall(item)" class="call" href="javascript:;"></a>
                 <a @click.once="fnHangUpNoAnswerCall(item)" class="offcall" href="javascript:;"></a>
@@ -81,15 +81,10 @@
         <div class="text">
           <div v-if="latestCall" class="fromCall">
             <!-- <span @click="turnOn(latestCall)" class="item">{{latestCall.name}}来电呼叫</span> -->
-            <span @click="toggleCallList" class="item">{{latestCall.name}}来电呼叫</span>
-            <span
-              v-if="callNum"
-              @click="toggleCallList"
-              class="icon"
-              :class="{'revert': showCallList}"
-            ></span>
+            <span @click="toggleCallList" class="item">{{ latestCall.name }}来电呼叫</span>
+            <span v-if="callNum" @click="toggleCallList" class="icon" :class="{ revert: showCallList }"></span>
           </div>
-          <span v-if="callNum" class="fromCallNum">{{callNum}}</span>
+          <span v-if="callNum" class="fromCallNum">{{ callNum }}</span>
         </div>
         <div class="video">
           <!-- <div v-if="newCallStatus && callNum > 0" id="newCall">
@@ -103,14 +98,14 @@
           </div>-->
           <div id="local_stream"></div>
           <Person
-            style="position: absolute; left:0; top: 0;"
+            style="position: absolute; left: 0; top: 0"
             v-show="!status"
             :width="width"
             :height="height"
             ref="person"
           />
         </div>
-        <div class="title">{{deptName}}</div>
+        <div class="title">{{ deptName }}</div>
         <div class="btns">
           <!-- <button @click="join">加入</button> -->
           <!-- <div @click="handleBtnCall" v-show="btnCall" class="call"></div> -->
