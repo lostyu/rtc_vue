@@ -612,7 +612,7 @@ export default {
     async fnHangUpNoAnswerCall(item) {
       // api
       await this.noticeVideo(2, 1, null, item.roomId)
-      // await this.hangupCall(item.roomId)
+      await this.hangupCall(item.roomId)
       this.callList = this.callList.filter((call) => call.id !== item.id)
       this.audioStop()
     },
