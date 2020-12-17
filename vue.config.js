@@ -33,7 +33,7 @@ module.exports = {
         changeOrigin: true,
         pathRewrite: function(path) {
           const result = path.replace('/baseApi', '')
-          console.log(result)
+          console.log('baseApi:', result)
           return result
         }
       },
@@ -42,7 +42,7 @@ module.exports = {
         changeOrigin: true,
         pathRewrite: function(path) {
           const result = path.replace('/erpApi', '')
-          console.log(result)
+          console.log('erpApi', result)
           return result
         }
       },
@@ -54,7 +54,7 @@ module.exports = {
         // }
         pathRewrite: function(path) {
           const result = path.replace('/socket', '')
-          console.log(result)
+          console.log('socket', result)
           return result
         }
       }

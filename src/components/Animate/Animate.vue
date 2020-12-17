@@ -1,13 +1,17 @@
 <template>
-  <div :id="id" :style="{width: width, height: height}"></div>
+  <div :id="id" :style="{ width: width, height: height }"></div>
 </template>
 
 <script>
 export default {
   props: {
-    id:{
+    path: {
       type: String,
-      default: "animation"
+      default: '/js/data2.json',
+    },
+    id: {
+      type: String,
+      required: true,
     },
     width: {
       type: String,
@@ -25,8 +29,7 @@ export default {
   methods: {
     start() {
       bodymovin.loadAnimation({
-        // animationData: '',
-        path: '/js/data2.json', //json文件路径
+        path: this.path, //json文件路径
         loop: true,
         autoplay: true,
         renderer: 'canvas', //渲染方式，有"html"、"canvas"和"svg"三种

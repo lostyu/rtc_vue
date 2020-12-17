@@ -11,7 +11,10 @@ module.exports = {
 
   // ==============门店=============
   createVideoRoom: '/baseApi/app/personalCenter/createVideoRoomByMd', // 创建房间
-  closeVideoRoom: '/baseApi/app/personalCenter/closeVideoRoom' // 关闭房间
+  closeVideoRoom: '/baseApi/app/personalCenter/closeVideoRoom', // 关闭房间
+
+  sysNoticeVideo: '/erpApi/videoCall/sysNoticeVideo'  // 视频客服消息推送
+
 }
 
 // prod

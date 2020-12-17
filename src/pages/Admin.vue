@@ -119,10 +119,11 @@
 <script>
 import TRTC from 'trtc-js-sdk'
 import config from '@/config'
-import devices from '@/utils/devices'
 import api from '@/config/api'
 import ReconnectingWebSocket from 'reconnecting-websocket'
 import Person from '@/components/Animate/Person'
+
+import { checkSystemRequirements, checkDevice } from '@/utils/check'
 
 import '@/assets/css/common.less'
 
@@ -188,13 +189,54 @@ export default {
       return this.storeList.length
     },
   },
-  mounted() {
-    devices()
-    this.initData()
-    this.roleCrl()
-    this.logger()
+  async mounted() {
+    const SysRequired = await checkSystemRequirements()
+
+    if (SysRequired) {
+      const deviceStatus = await checkDevice()
+      if (!deviceStatus.ok) {
+        this.$toast({ message: deviceStatus.msg, duration: 5000 })
+      } else {
+        this.initData()
+        this.roleCrl()
+        this.logger()
+      }
+    } else {
+      this.$toast({ message: '该浏览器不支持视频通话', duration: 5000 })
+    }
   },
   methods: {
+    async noticeVideo(type, platform, sendId, roomId) {
+      // type	是	Integer	3 按钮通话
+      // platform	是	Integer	推送目标 1门店 2中控
+      // sendId	是	String	推送目标id 可以为deptId 可以为userId
+      try {
+        const res = await this.$axios.post(
+          api.sysNoticeVideo,
+          {
+            type,
+            platform,
+            sendId,
+            roomId,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${this.accessToken}`,
+            },
+            interceptors: {
+              // 为false 时，不再经过某个interceptor
+              request: false,
+              response: false,
+              error: false,
+            },
+            postDataType: 'json',
+          }
+        )
+      } catch (error) {
+        console.log(error)
+        this.$toast({ message: '网络错误，请联系管理员', duration: 5000 })
+      }
+    },
     bindSocket() {
       this.rws.onopen = () => {
         this.rws.send('中控连接到视频通话...')
@@ -239,7 +281,7 @@ export default {
         this.audioStop()
       }
 
-      if (type === 4) {
+      if (type === 5) {
         this.audioStop()
         // this.leave()
         // this.timerMap[]
@@ -569,6 +611,7 @@ export default {
     // 挂断还未接听的电话，不做实际后台交互请求（只是本地屏蔽本条数据）
     async fnHangUpNoAnswerCall(item) {
       // api
+      await this.noticeVideo(2, 1, null, item.roomId)
       // await this.hangupCall(item.roomId)
       this.callList = this.callList.filter((call) => call.id !== item.id)
       this.audioStop()
@@ -774,4 +817,12 @@ export default {
 
 
 <style scoped lang="less">
+.remoteBox {
+  position: absolute;
+  top: 96px;
+  left: 65px;
+  width: 1030px;
+  height: 681px;
+  background: #0b1333 url('~@/assets/img/logo-text.png') center no-repeat;
+}
 </style>

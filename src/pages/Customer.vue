@@ -3,39 +3,53 @@
     <audio class="audio" loop controls ref="a1" src="../assets/weixin.mp3" />
     <div class="container">
       <div class="main">
-        <div class="debug" style="display:none">
-          authored:{{authored}}
+        <div class="debug" style="display: none">
+          sendId:{{ sendId }}<br />
+          devStatus:{{ devStatus }}<br />
+          authored:{{ authored }}
           <br />
-          canBtnOff: {{canBtnOff}}
+          canBtnOff: {{ canBtnOff }}
           <br />
-          bmessage: {{bMessage}}
+          bmessage: {{ bMessage }}
           <br />
-          timer: {{timer}}
+          timer: {{ timer }}
           <br />
-          deptName: {{deptName}}
+          deptName: {{ deptName }}
           <br />
-          deptId: {{deptId}}
+          deptId: {{ deptId }}
           <br />
-          roomId: {{roomId}}
+          roomId: {{ roomId }}
           <br />
-          userId: {{userId}}
+          userId: {{ userId }}
           <hr />
-          {{curStoreInfo}}
+          {{ curStoreInfo }}
           <hr />
-          sdkAppId: {{sdkAppId}}
+          sdkAppId: {{ sdkAppId }}
           <br />
           <br />
-          userSig{{userSig}}
+          userSig{{ userSig }}
           <br />
         </div>
         <div class="remoteBox">
-          <div v-for="item in remoteStreamArr" :key="item" :id="'remote_stream_'+item"></div>
+          <div class="remoteBoxAnimate">
+            <div class="logo_text">sendId:{{ sendId }}</div>
+            <div v-if="animateStatus === 'default'" class="animate default">
+              <!-- <AnimateCmp
+                id="callAnimate"
+                style="position: absolute; left: 0; top: 0"
+                v-show="!status"
+                ref="callAnimate"
+              /> -->
+            </div>
+            <div v-if="animateStatus === 'call'" class="animate call"></div>
+          </div>
+          <div v-for="item in remoteStreamArr" :key="item" :id="'remote_stream_' + item"></div>
         </div>
         <div class="remoteTitle">
           <div v-if="curStoreInfo" class="groupItem">
             <span class="dot green"></span>
-            <span @click="toggleStoreList" class="text">{{curStoreInfo.name}}</span>
-            <span class="arrow" :class="{'active': showStoreList}"></span>
+            <span @click="toggleStoreList" class="text">{{ curStoreInfo.name }}</span>
+            <span class="arrow" :class="{ active: showStoreList }"></span>
           </div>
         </div>
       </div>
@@ -44,15 +58,16 @@
         <div class="text"></div>
         <div class="video">
           <div id="local_stream"></div>
-          <Person
-            style="position: absolute; left:0; top: 0;"
+          <AnimateCmp
+            id="animation"
+            style="position: absolute; left: 0; top: 0"
             v-show="!status"
             :width="width"
             :height="height"
-            ref="person"
+            ref="animation"
           />
         </div>
-        <div class="title">{{deptName}}</div>
+        <div class="title">{{ deptName }}</div>
         <div class="btns">
           <div @click="handleBtnCall" v-show="btnCall" class="call"></div>
           <div @click="handleBtnOff" v-show="btnOff" class="off"></div>
@@ -65,21 +80,28 @@
 <script>
 import TRTC from 'trtc-js-sdk'
 import config from '@/config'
-import devices from '@/utils/devices'
 import api from '@/config/api'
-// import { v4 as uuidv4 } from 'uuid'
 import ReconnectingWebSocket from 'reconnecting-websocket'
 
-import Person from '@/components/Animate/Person'
+// import Person from '@/components/Animate/Person'
+import AnimateCmp from '@/components/Animate/Animate'
+import { checkSystemRequirements, checkDevice } from '@/utils/check'
 
 import '@/assets/css/common.less'
 
 export default {
   components: {
-    Person,
+    AnimateCmp,
   },
   data() {
     return {
+      sendId: 0,
+      // 页面设备状态
+      devStatus: false,
+
+      // 动画状态
+      animateStatus: 'default', // default call
+
       testId: 0,
       // 253px  353px  1024
       // 388px  398px  1920
@@ -106,6 +128,7 @@ export default {
       latestCall: null, // 最近来电
       btnCall: false, // 拨打按钮是否显示
       btnOff: false, // 挂断按钮是否显示
+
       // ======================= userInfo
       curUserInfo: {}, // 当用户信息，初始化获取
       deptId: '',
@@ -143,14 +166,58 @@ export default {
       return this.isConnectSocket && this.deptName !== ''
     },
   },
-  mounted() {
-    // console.log(uuidv4())
-    devices()
+  async mounted() {
+    const SysRequired = await checkSystemRequirements()
+
+    if (SysRequired) {
+      const deviceStatus = await checkDevice()
+      if (!deviceStatus.ok) {
+        this.$toast({ message: deviceStatus.msg, duration: 5000 })
+      } else {
+        this.roleCrl()
+        this.logger()
+
+        this.devStatus = true
+      }
+    } else {
+      this.$toast({ message: '该浏览器不支持视频通话', duration: 5000 })
+    }
+
     this.initData()
-    this.roleCrl()
-    this.logger()
   },
   methods: {
+    async noticeVideo(type, platform, sendId, roomId) {
+      // type	是	Integer	3 按钮通话
+      // platform	是	Integer	推送目标 1门店 2中控
+      // sendId	是	String	推送目标id 可以为deptId 可以为userId
+      try {
+        const res = await this.$axios.post(
+          api.sysNoticeVideo,
+          {
+            type,
+            platform,
+            sendId,
+            roomId,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${this.accessToken}`,
+            },
+            interceptors: {
+              // 为false 时，不再经过某个interceptor
+              request: false,
+              response: false,
+              error: false,
+            },
+            postDataType: 'json',
+          }
+        )
+      } catch (error) {
+        console.log(error)
+        this.$toast({ message: '网络错误，请联系管理员', duration: 5000 })
+      }
+    },
+
     // 初始化数据
     async initData() {
       await this.getUserInfo()
@@ -175,7 +242,8 @@ export default {
         this.width = '253px'
         this.height = '353px'
       }
-      this.$refs.person.start()
+      // this.$refs.callAnimate.start()
+      this.$refs.animation.start()
     },
 
     // socket
@@ -191,6 +259,7 @@ export default {
         // console.log(evt.data)
         const { roomId, type } = JSON.parse(evt.data)
         const obj = JSON.parse(evt.data)
+        this.sendId = obj.sendId
         console.log('================================', obj)
 
         // type等于2，关闭
@@ -204,7 +273,13 @@ export default {
         if (type === 3) {
           if (this.bMessage) {
             console.log('333333333333333333333333333')
-            this.handleBtnCall()
+            if (this.devStatus) {
+              this.handleBtnCall()
+            } else {
+              // this.rws.send({ status: 'deviceError', message: '设备不可用' })
+              this.noticeVideo(6, 1, this.sendId)
+              console.log('@@@@@@@@@@@@@@@@@@@@@@@@@设备不可用')
+            }
           }
         }
       }
@@ -342,31 +417,31 @@ export default {
     },
     // 关闭房间
     // /app/personalCenter/closeVideoRoom?roomId=12345
-    async closeVideoRoom() {
-      if (!this.roomId) {
-        return
-      }
-      try {
-        const res = await this.$axios.get(api.closeVideoRoom, {
-          headers: {
-            Authorization: `Bearer ${this.accessToken}`,
-          },
-          params: {
-            roomId: this.roomId,
-          },
-          interceptors: {
-            // 为false 时，不再经过某个interceptor
-            request: false,
-            response: false,
-            error: false,
-          },
-        })
-        const data = res.data
-        console.log(data)
-      } catch (e) {
-        console.log(e)
-      }
-    },
+    // async closeVideoRoom() {
+    //   if (!this.roomId) {
+    //     return
+    //   }
+    //   try {
+    //     const res = await this.$axios.get(api.closeVideoRoom, {
+    //       headers: {
+    //         Authorization: `Bearer ${this.accessToken}`,
+    //       },
+    //       params: {
+    //         roomId: this.roomId,
+    //       },
+    //       interceptors: {
+    //         // 为false 时，不再经过某个interceptor
+    //         request: false,
+    //         response: false,
+    //         error: false,
+    //       },
+    //     })
+    //     const data = res.data
+    //     console.log(data)
+    //   } catch (e) {
+    //     console.log(e)
+    //   }
+    // },
     // 拨打按钮 customer显示
     async handleBtnCall() {
       if (!this.authored) {
@@ -383,6 +458,9 @@ export default {
         this.audioTimer = null
       }, this.timeout)
 
+      this.animateStatus = 'call' // 正在拨打中
+      // this.rws.send({ status: this.animateStatus, message: '拨打中' })
+
       this.bMessage = false
       // 创建房间，随机生成房间号
       if (!this.isJoined) {
@@ -390,10 +468,14 @@ export default {
         await this.join()
         await this.createRoom()
 
+        this.noticeVideo(4, 1, this.sendId, this.roomId)
+        console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@拨打中')
+
         setTimeout(() => {
           this.canBtnOff = true
         }, 2000)
 
+        clearTimeout(this.timer)
         this.timer = setTimeout(() => {
           this.handleBtnOff()
           this.timer = null
@@ -404,17 +486,20 @@ export default {
     // 挂断大按钮
     async handleBtnOff() {
       if (this.canBtnOff) {
+        console.log('@@@@挂断大按钮@@@@挂断大按钮@@@@挂断大按钮@@@@挂断大按钮')
         this.canBtnOff = false
         await this.leave()
         this.settingOffCall()
         this.testId++
         console.log('@@@@挂断大按钮', this.testId)
-        await this.closeVideoRoom()
+        // await this.closeVideoRoom()
+        await this.noticeVideo(2, 1, this.sendId, this.roomId)
         this.bMessage = true
         clearTimeout(this.timer)
         this.timer = null
 
         this.audioStop()
+        this.animateStatus = 'default'
       }
     },
 
@@ -498,6 +583,10 @@ export default {
       await this.localStream.close()
       this.localStream = null
       this.isJoined = false
+      // this.rws.send({ status: 'disconnect', message: '挂断' })
+
+      this.noticeVideo(2, 1, this.sendId, this.roomId)
+      console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@挂断')
     },
 
     // 推流
@@ -567,12 +656,17 @@ export default {
       // 远端视频流断开连接，挂断本地流
       this.client.on('peer-leave', async (event) => {
         this.leave()
-        await this.closeVideoRoom()
+        // await this.closeVideoRoom()
+        await this.noticeVideo(2, 1, this.sendId, this.roomId)
         this.btnCall = true
         this.btnOff = false
         this.bMessage = true
+        this.animateStatus = 'default'
 
         console.log('peer-leave..............')
+        // this.rws.send({ status: 'disconnect', message: '挂断' })
+
+        console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@挂断')
       })
 
       this.client.on('peer-join', (event) => {
@@ -581,6 +675,10 @@ export default {
         this.timer = null
 
         this.audioStop()
+        // this.rws.send({ status: 'connect', message: '通话中' })
+
+        this.noticeVideo(5, 1, this.sendId)
+        console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@通话中')
       })
     },
   },
@@ -597,4 +695,37 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 
 <style scoped lang="less">
+.remoteBoxAnimate {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+
+  .logo_text {
+    margin: 0 auto;
+    width: 80%;
+    height: 20%;
+    background: url(~@/assets/img/logo_text.png) center no-repeat;
+    background-size: contain;
+  }
+
+  .animate {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 80%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &.default {
+      background: url(~@/assets/img/call_default.gif) center no-repeat;
+      background-size: contain;
+    }
+    &.call {
+      background: url(~@/assets/img/call.gif) center no-repeat;
+      background-size: contain;
+    }
+  }
+}
 </style>

@@ -14,12 +14,16 @@
 module.exports = {
   // https://xxcg.com/xxx/xxx
 
-  baseUrl: 'http://192.168.0.230:8075',
   //   baseUrl: 'http://192.168.0.128:8087', // http://192.168.0.150:8075/personalCenter/createVideoRoom
   //   baseUrl: 'http://192.168.0.212:8075', // http://192.168.0.150:8075/personalCenter/createVideoRoom
-  erpUrl: 'http://192.168.0.230:8085',
-  socketUrl: 'ws://192.168.0.230:8083'
-  // socketUrl: 'ws://192.168.0.200:8083'
+
+  // baseUrl: 'http://192.168.0.230:8075',
+  // erpUrl: 'http://192.168.0.230:8085',
+  // socketUrl: 'ws://192.168.0.230:8083'
+
+  baseUrl: 'http://192.168.0.15:8075',
+  erpUrl: 'http://192.168.0.15:8085',
+  socketUrl: 'ws://192.168.0.15:8083'
 }
 
 // 获取认证用户信息
