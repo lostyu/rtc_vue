@@ -13,7 +13,8 @@
     <audio class="audio" loop controls ref="a1" src="../assets/weixin.mp3" />
     <div class="container">
       <div class="main">
-        <div class="debug" style="display: none">
+        <div class="debug" style="display: -none">
+          devStatus:{{ devStatus }}<br />
           timerMap: {{ timerMap }}
           <br />
           status:{{ status }}
@@ -72,8 +73,8 @@
             <li v-for="item in callList" :key="item.id">
               <span class="text2">{{ item.name }}</span>
               <span class="zt">
-                <a @click.once="fnReceiveCall(item)" class="call" href="javascript:;"></a>
-                <a @click.once="fnHangUpNoAnswerCall(item)" class="offcall" href="javascript:;"></a>
+                <a @click="fnReceiveCall(item)" class="call" href="javascript:;"></a>
+                <a @click="fnHangUpNoAnswerCall(item)" class="offcall" href="javascript:;"></a>
               </span>
             </li>
           </ul>
@@ -133,6 +134,7 @@ export default {
   },
   data() {
     return {
+      devStatus: false,
       // 253px  353px  1024
       // 388px  398px  1920
       width: '',
@@ -192,18 +194,23 @@ export default {
   async mounted() {
     const SysRequired = await checkSystemRequirements()
 
+    this.deviceChangeFn()
+
     if (SysRequired) {
       const deviceStatus = await checkDevice()
       if (!deviceStatus.ok) {
+        this.devStatus = false
         this.$toast({ message: deviceStatus.msg, duration: 5000 })
       } else {
-        this.initData()
-        this.roleCrl()
-        this.logger()
+        this.devStatus = true
       }
     } else {
       this.$toast({ message: '该浏览器不支持视频通话', duration: 5000 })
     }
+
+    this.initData()
+    this.roleCrl()
+    this.logger()
   },
   methods: {
     async noticeVideo(type, platform, sendId, roomId) {
@@ -235,6 +242,20 @@ export default {
       } catch (error) {
         console.log(error)
         this.$toast({ message: '网络错误，请联系管理员', duration: 5000 })
+      }
+    },
+    deviceChangeFn() {
+      const _this = this
+      navigator.mediaDevices.ondevicechange = async function () {
+        const deviceStatus = await checkDevice()
+        if (!deviceStatus.ok) {
+          _this.$toast({ message: deviceStatus.msg, duration: 5000 })
+          _this.devStatus = false
+          this.noticeVideo(6, 1, this.userId)
+        } else {
+          _this.devStatus = true
+          _this.$toast({ message: '设备已连接', duration: 5000 })
+        }
       }
     },
     bindSocket() {
@@ -276,7 +297,10 @@ export default {
 
       // 收到门店挂断的通知
       if (type === 2) {
-        // 删除视频请求列表
+        // 更新视频通话列表
+        console.log('22222222222222222222')
+        // 清除定时器
+        clearTimeout(this.timerMap[roomId])
         // 停止音乐
         this.audioStop()
       }
@@ -346,6 +370,9 @@ export default {
         this.height = '353px'
       }
       this.$refs.person.start()
+
+      // 更新房间列表
+      await this.getRoomList()
 
       // 绑定浏览器关闭事件
 
@@ -584,6 +611,11 @@ export default {
       clearTimeout(this.timerMap[item.roomId])
       this.$set(this.timerMap, item.roomId, null)
 
+      if (!this.devStatus) {
+        this.$toast({ message: '请检查设备是否正常', duration: 5000 })
+        return
+      }
+
       //状态(00发起通话 01通话中 02会员挂断 03通话结束)
       const data = await this.getStatus(item.id)
 
@@ -608,7 +640,7 @@ export default {
       this.showCallList = false
       this.audioStop()
     },
-    // 挂断还未接听的电话，不做实际后台交互请求（只是本地屏蔽本条数据）
+    // 挂断还未接听的电话
     async fnHangUpNoAnswerCall(item) {
       // api
       await this.noticeVideo(2, 1, null, item.roomId)

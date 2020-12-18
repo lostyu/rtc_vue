@@ -3,7 +3,7 @@
     <audio class="audio" loop controls ref="a1" src="../assets/weixin.mp3" />
     <div class="container">
       <div class="main">
-        <div class="debug" style="display: none">
+        <div class="debug" style="display: -none">
           sendId:{{ sendId }}<br />
           devStatus:{{ devStatus }}<br />
           authored:{{ authored }}
@@ -169,14 +169,14 @@ export default {
   async mounted() {
     const SysRequired = await checkSystemRequirements()
 
+    this.deviceChangeFn()
+
     if (SysRequired) {
       const deviceStatus = await checkDevice()
       if (!deviceStatus.ok) {
+        this.devStatus = false
         this.$toast({ message: deviceStatus.msg, duration: 5000 })
       } else {
-        this.roleCrl()
-        this.logger()
-
         this.devStatus = true
       }
     } else {
@@ -184,6 +184,8 @@ export default {
     }
 
     this.initData()
+    this.roleCrl()
+    this.logger()
   },
   methods: {
     async noticeVideo(type, platform, sendId, roomId) {
@@ -215,6 +217,22 @@ export default {
       } catch (error) {
         console.log(error)
         this.$toast({ message: '网络错误，请联系管理员', duration: 5000 })
+      }
+    },
+
+    deviceChangeFn() {
+      const _this = this
+      navigator.mediaDevices.ondevicechange = async function () {
+        const deviceStatus = await checkDevice()
+        if (!deviceStatus.ok) {
+          _this.$toast({ message: deviceStatus.msg, duration: 5000 })
+          _this.devStatus = false
+          this.noticeVideo(6, 1, this.sendId)
+        } else {
+          _this.devStatus = true
+          _this.$toast({ message: '设备已连接', duration: 5000 })
+          
+        }
       }
     },
 
@@ -417,37 +435,40 @@ export default {
     },
     // 关闭房间
     // /app/personalCenter/closeVideoRoom?roomId=12345
-    // async closeVideoRoom() {
-    //   if (!this.roomId) {
-    //     return
-    //   }
-    //   try {
-    //     const res = await this.$axios.get(api.closeVideoRoom, {
-    //       headers: {
-    //         Authorization: `Bearer ${this.accessToken}`,
-    //       },
-    //       params: {
-    //         roomId: this.roomId,
-    //       },
-    //       interceptors: {
-    //         // 为false 时，不再经过某个interceptor
-    //         request: false,
-    //         response: false,
-    //         error: false,
-    //       },
-    //     })
-    //     const data = res.data
-    //     console.log(data)
-    //   } catch (e) {
-    //     console.log(e)
-    //   }
-    // },
+    async closeVideoRoom() {
+      if (!this.roomId) {
+        return
+      }
+      try {
+        const res = await this.$axios.get(api.closeVideoRoom, {
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+          },
+          params: {
+            roomId: this.roomId,
+          },
+          interceptors: {
+            // 为false 时，不再经过某个interceptor
+            request: false,
+            response: false,
+            error: false,
+          },
+        })
+        const data = res.data
+        console.log(data)
+      } catch (e) {
+        console.log(e)
+      }
+    },
     // 拨打按钮 customer显示
     async handleBtnCall() {
       if (!this.authored) {
         return
       }
       if (!this.bMessage) {
+        return
+      }
+      if (!this.devStatus) {
         return
       }
 
@@ -473,7 +494,7 @@ export default {
 
         setTimeout(() => {
           this.canBtnOff = true
-        }, 2000)
+        }, 1500)
 
         clearTimeout(this.timer)
         this.timer = setTimeout(() => {
@@ -493,7 +514,7 @@ export default {
         this.testId++
         console.log('@@@@挂断大按钮', this.testId)
         // await this.closeVideoRoom()
-        await this.noticeVideo(2, 1, this.sendId, this.roomId)
+        // await this.noticeVideo(2, 1, this.sendId, this.roomId)
         this.bMessage = true
         clearTimeout(this.timer)
         this.timer = null
@@ -584,7 +605,7 @@ export default {
       this.localStream = null
       this.isJoined = false
       // this.rws.send({ status: 'disconnect', message: '挂断' })
-
+      await this.closeVideoRoom()
       this.noticeVideo(2, 1, this.sendId, this.roomId)
       console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@挂断')
     },
@@ -657,7 +678,7 @@ export default {
       this.client.on('peer-leave', async (event) => {
         this.leave()
         // await this.closeVideoRoom()
-        await this.noticeVideo(2, 1, this.sendId, this.roomId)
+        // await this.noticeVideo(2, 1, this.sendId, this.roomId)
         this.btnCall = true
         this.btnOff = false
         this.bMessage = true
